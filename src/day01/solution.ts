@@ -1,1 +1,5 @@
-console.log('day one works!');
+function sum(a: number, b: number) {
+    return a + b;
+}
+
+module.exports = sum;
