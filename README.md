@@ -1,10 +1,7 @@
 # adventofcode2022
-Solutions of adventofcode 2022 using Typescript/Javascript.
+Solutions of adventofcode 2022 using Javascript.
 
-To start typescript compiling:
-- npm run compile-watch
+Uses Jest for tests
 
-To start file watching and reload browser automatically:
-- npm run start
-
-
+To start tests in watch mode
+- npm run test
