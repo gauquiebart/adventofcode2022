@@ -1,4 +1,58 @@
 // @ts-nocheck
+const totalCaloriesForEachElf = function (input) {
+    return input.split("\n\n")
+        .map(caloriesForElfAsString => caloriesForElfAsString.split("\n"))
+        .map(caloriesForEachElf =>
+            caloriesForEachElf.reduce((accumulator, currentValue) => accumulator + +currentValue, 0)
+        );
+}
+
+const findHighestCalories = function (input) {
+    return Math.max(...totalCaloriesForEachElf(input));
+}
+
+function compareNumbers(a, b) {
+    return a - b;
+}
+
+const findTotalForTopThreeElves = function (input) {
+    return totalCaloriesForEachElf(input)
+        .sort(compareNumbers)
+        .reverse()
+        .slice(0, 3)
+        .reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+}
+
+test('finds highest calories for test input', () => {
+    expect(findHighestCalories(testInput)).toBe(24000);
+});
+
+test('finds highest calories for puzzle input', () => {
+    expect(findHighestCalories(puzzleInput)).toBe(68442);
+});
+
+test('finds total for top three elves  for test input', () => {
+    expect(findTotalForTopThreeElves(testInput)).toBe(45000);
+});
+
+test('finds total for top three elves  for puzzle input', () => {
+    expect(findTotalForTopThreeElves(puzzleInput)).toBe(204837);
+});
+
+const testInput = `1000
+2000
+3000
+
+4000
+
+5000
+6000
+
+7000
+8000
+9000
+
+10000`;
 
 const puzzleInput = `62797
 
@@ -2242,58 +2296,3 @@ const puzzleInput = `62797
 6458
 6400
 3736`
-
-const testInput = `1000
-2000
-3000
-
-4000
-
-5000
-6000
-
-7000
-8000
-9000
-
-10000`;
-
-const totalCaloriesForEachElf = function (input) {
-    return input.split("\n\n")
-        .map(caloriesForElfAsString => caloriesForElfAsString.split("\n"))
-        .map(caloriesForEachElf =>
-            caloriesForEachElf.reduce((accumulator, currentValue) => accumulator + +currentValue, 0)
-        );
-}
-
-const findHighestCalories = function (input) {
-    return Math.max(...totalCaloriesForEachElf(input));
-}
-
-function compareNumbers(a, b) {
-    return a - b;
-}
-
-const findTotalForTopThreeElves = function (input) {
-    return totalCaloriesForEachElf(input)
-        .sort(compareNumbers)
-        .reverse()
-        .slice(0, 3)
-        .reduce((accumulator, currentValue) => accumulator + currentValue, 0);
-}
-
-test('finds highest calories for test input', () => {
-    expect(findHighestCalories(testInput)).toBe(24000);
-});
-
-test('finds highest calories for puzzle input', () => {
-    expect(findHighestCalories(puzzleInput)).toBe(68442);
-});
-
-test('finds total for top three elves  for test input', () => {
-    expect(findTotalForTopThreeElves(testInput)).toBe(45000);
-});
-
-test('finds total for top three elves  for puzzle input', () => {
-    expect(findTotalForTopThreeElves(puzzleInput)).toBe(204837);
-});
