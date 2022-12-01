@@ -5,7 +5,7 @@
   "scripts": {
     "compile-watch": "npx tsc --watch",
     "start": "lite-server",
-    "test": "jest --watchAll"
+    "test": "jest --watchAll --silent=false"
   },
   "author": "",
   "license": "MIT",
