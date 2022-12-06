@@ -1,12 +1,3 @@
-const chunk = function (array, chunkSize) {
-    const result = [];
-    for (let i = 0; i < array.length; i += chunkSize) {
-        const chunk = array.slice(i, i + chunkSize);
-        result.push(chunk);
-    }
-    return result;
-}
-
 const startOfPacketMarkerIndex = function(input, markerLength){
     for(let i = 0; i <= (input.length - markerLength); i += 1) {
         const possibleMarker = input.slice(i, i + markerLength);
