@@ -1,21 +1,24 @@
-// @ts-nocheck
 const parseInput = function (input) {
     return input.split('\n')
         .map(l => [...l].map(el => +el));
 }
 
 const calcBorderY = function (trees) {
-    return trees.length;
-}
-
-const calcBorderX = function (trees) {
     return trees[0].length;
 }
 
+const calcBorderX = function (trees) {
+    return trees.length;
+}
+
+const treeHeight = function (x, y, trees) {
+    return trees[y][x];
+}
+
 const isTreeVisibleFromLeft = function (x, y, trees) {
-    const value = trees[x][y];
+    const height = treeHeight(x, y, trees);
     for (let i = x - 1; i >= 0; i--) {
-        if (trees[i][y] >= value) {
+        if (treeHeight(i, y, trees) >= height) {
             return false;
         }
     }
@@ -23,9 +26,9 @@ const isTreeVisibleFromLeft = function (x, y, trees) {
 }
 
 const isTreeVisibleFromRight = function (x, y, trees) {
-    const value = trees[x][y];
+    const height = treeHeight(x, y, trees);
     for (let i = x + 1; i < calcBorderX(trees); i++) {
-        if (trees[i][y] >= value) {
+        if (treeHeight(i, y, trees) >= height) {
             return false;
         }
     }
@@ -33,9 +36,9 @@ const isTreeVisibleFromRight = function (x, y, trees) {
 }
 
 const isTreeVisibleFromTop = function (x, y, trees) {
-    const value = trees[x][y];
+    const height = treeHeight(x, y, trees);
     for (let j = y - 1; j >= 0; j--) {
-        if (trees[x][j] >= value) {
+        if (treeHeight(x, j, trees) >= height) {
             return false;
         }
     }
@@ -43,34 +46,27 @@ const isTreeVisibleFromTop = function (x, y, trees) {
 }
 
 const isTreeVisibleFromBottom = function (x, y, trees) {
-    const value = trees[x][y];
+    const height = treeHeight(x, y, trees);
     for (let j = y + 1; j < calcBorderY(trees); j++) {
-        if (trees[x][j] >= value) {
+        if (treeHeight(x, j, trees) >= height) {
             return false;
         }
     }
     return true;
 }
 
-const isTreeVisibleFromOutsideAt = function (x, y, trees) {
+const isTreeVisibleFromOutside = function (x, y, trees) {
     const borderY = calcBorderY(trees);
     const borderX = calcBorderX(trees);
 
-    if (x === 0
+    return x === 0
         || y === 0
         || x === borderX - 1
-        || y === borderY - 1) {
-        return true;
-    }
-
-    if (isTreeVisibleFromLeft(x, y, trees)
+        || y === borderY - 1
+        || isTreeVisibleFromLeft(x, y, trees)
         || isTreeVisibleFromRight(x, y, trees)
         || isTreeVisibleFromTop(x, y, trees)
-        || isTreeVisibleFromBottom(x, y, trees)) {
-        return true;
-    }
-
-
+        || isTreeVisibleFromBottom(x, y, trees);
 }
 
 const countTotalNumberOfVisibleTrees = function (input) {
@@ -79,8 +75,90 @@ const countTotalNumberOfVisibleTrees = function (input) {
     let result = 0;
     for (let x = 0; x < calcBorderX(trees); x++) {
         for (let y = 0; y < calcBorderY(trees); y++) {
-            if (isTreeVisibleFromOutsideAt(x, y, trees)) {
+            if (isTreeVisibleFromOutside(x, y, trees)) {
                 result = result + 1;
+            }
+        }
+    }
+    return result;
+}
+
+const scenicScoreToLeft = function (x, y, trees) {
+    const height = treeHeight(x, y, trees);
+    let result = 0;
+    for (let i = x - 1; i >= 0; i--) {
+        result++;
+        if (treeHeight(i, y, trees) < height) {
+            continue;
+        }
+        if (treeHeight(i, y, trees) >= height) {
+            break;
+        }
+    }
+    return result;
+}
+
+const scenicScoreToRight = function (x, y, trees) {
+    const height = treeHeight(x, y, trees);
+    let result = 0;
+    for (let i = x + 1; i < calcBorderX(trees); i++) {
+        result++;
+        if (treeHeight(i, y, trees) < height) {
+            continue;
+        }
+        if (treeHeight(i, y, trees) >= height) {
+            break;
+        }
+    }
+    return result;
+}
+
+const scenicScoreToTop = function(x, y, trees) {
+    const height = treeHeight(x, y, trees);
+    let result = 0;
+    for (let j = y - 1; j >= 0; j--) {
+        result ++;
+        if (treeHeight(x, j, trees) < height) {
+            continue;
+        }
+        if (treeHeight(x, j, trees) >= height) {
+            break;
+        }
+    }
+    return result;
+}
+
+const scenicScoreToBottom = function (x, y, trees) {
+    const height = treeHeight(x, y, trees);
+    let result = 0;
+    for (let j = y + 1; j < calcBorderY(trees); j++) {
+        result ++;
+        if (treeHeight(x, j, trees) < height) {
+            continue;
+        }
+        if (treeHeight(x, j, trees) >= height) {
+            break;
+        }
+    }
+    return result;
+}
+
+const scenicScoreForTree = function (x, y, trees) {
+    return scenicScoreToLeft(x, y, trees)
+        * scenicScoreToRight(x, y, trees)
+        * scenicScoreToTop(x, y, trees)
+        * scenicScoreToBottom(x, y, trees);
+}
+
+const highestScenicScoreForAnyTree = function (input) {
+    const trees = parseInput(input);
+
+    let result = -1;
+    for (let x = 0; x < calcBorderX(trees); x++) {
+        for (let y = 0; y < calcBorderY(trees); y++) {
+            const score = scenicScoreForTree(x, y, trees);
+            if (score > result) {
+                result = score;
             }
         }
     }
@@ -89,6 +167,18 @@ const countTotalNumberOfVisibleTrees = function (input) {
 
 test('counts total number of visible trees for test input ', () => {
     expect(countTotalNumberOfVisibleTrees(testInput)).toBe(21);
+});
+
+test('counts total number of visible trees for puzzle input ', () => {
+    expect(countTotalNumberOfVisibleTrees(puzzleInput)).toBe(1825);
+});
+
+test('highest scenic score for any tree for test input', () => {
+    expect(highestScenicScoreForAnyTree(testInput)).toBe(8);
+});
+
+test('highest scenic score for any tree for puzzle input', () => {
+    expect(highestScenicScoreForAnyTree(puzzleInput)).toBe(235200);
 });
 
 
