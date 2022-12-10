@@ -17,7 +17,7 @@ const arePositionsTouching = function (pos, otherPos) {
 
 const arePositionsEqual = function (pos, otherPos) {
     return hor(pos) === hor(otherPos)
-    && vert(pos) === vert(otherPos);
+        && vert(pos) === vert(otherPos);
 }
 
 const movePosition = function (pos, direction) {
@@ -38,24 +38,27 @@ const createOrigin = function () {
     return createPosition(0, 0);
 }
 
-const createHead = function () {
-    return ['head', createOrigin()];
+const position = function (knot) {
+    return knot[0];
 }
 
-const createTail = function () {
-    return ['tail', createOrigin(), ];
+const setPosition = function (knot, newPosition) {
+    return knot[0] = newPosition;
 }
 
-const position = function (headOrTail) {
-    return headOrTail[1];
+const createKnot = function () {
+    return [createOrigin()];
+}
+const createRope2Knots = function () {
+    return [createKnot(), createKnot()];
 }
 
-const setPosition = function(headOrTail, newPosition) {
-    return headOrTail[1] = newPosition;
+const createRope10Knots = function () {
+    return [createKnot(), createKnot(), createKnot(), createKnot(), createKnot(), createKnot(), createKnot(), createKnot(), createKnot(), createKnot()];
 }
 
-const createRope = function () {
-    return [createHead(), createTail()];
+const knots = function (rope) {
+    return rope;
 }
 
 const headOfRope = function (rope) {
@@ -63,7 +66,7 @@ const headOfRope = function (rope) {
 }
 
 const tailOfRope = function (rope) {
-    return rope[1];
+    return rope[rope.length - 1];
 }
 
 const moveHeadTo = function (rope, direction) {
@@ -73,36 +76,33 @@ const moveHeadTo = function (rope, direction) {
     setPosition(head, movePosition(headPosition, direction));
 }
 
-const makeTailAdjacentToHead = function (rope) {
-    const head = headOfRope(rope);
-    const tail = tailOfRope(rope);
+const makeKnotFollowingAdjacentToKnotLeading = function (knotLeading, knotFollowing) {
+    const knotLeadingPosition = position(knotLeading);
+    const knotFollowingPosition = position(knotFollowing);
 
-    const headPosition = position(head);
-    const tailPosition = position(tail);
-
-    if (arePositionsTouching(headPosition, tailPosition)) {
+    if (arePositionsTouching(knotLeadingPosition, knotFollowingPosition)) {
         return;
     }
 
-    let newTailPosition;
-    if (hor(headPosition) === hor(tailPosition)) {
-        newTailPosition = movePosition(tailPosition, vert(headPosition) > vert(tailPosition) ? 'U' : 'D');
-    } else if (vert(headPosition) === vert(tailPosition)) {
-        newTailPosition = movePosition(tailPosition, hor(headPosition) > hor(tailPosition) ? 'R' : 'L');
+    let newKnotFollowingPosition;
+    if (hor(knotLeadingPosition) === hor(knotFollowingPosition)) {
+        newKnotFollowingPosition = movePosition(knotFollowingPosition, vert(knotLeadingPosition) > vert(knotFollowingPosition) ? 'U' : 'D');
+    } else if (vert(knotLeadingPosition) === vert(knotFollowingPosition)) {
+        newKnotFollowingPosition = movePosition(knotFollowingPosition, hor(knotLeadingPosition) > hor(knotFollowingPosition) ? 'R' : 'L');
     } else {
-        newTailPosition = movePosition(tailPosition, hor(headPosition) > hor(tailPosition) ? 'R' : 'L');
-        newTailPosition = movePosition(newTailPosition, vert(headPosition) > vert(tailPosition) ? 'U' : 'D');
+        newKnotFollowingPosition = movePosition(knotFollowingPosition, hor(knotLeadingPosition) > hor(knotFollowingPosition) ? 'R' : 'L');
+        newKnotFollowingPosition = movePosition(newKnotFollowingPosition, vert(knotLeadingPosition) > vert(knotFollowingPosition) ? 'U' : 'D');
     }
 
-    setPosition(tail, newTailPosition);
+    setPosition(knotFollowing, newKnotFollowingPosition);
 
     return;
 }
 
-const retainUniquePositions = function(positions) {
+const retainUniquePositions = function (positions) {
     const result = [];
-    for(const position of positions) {
-        if(result.findIndex(p => arePositionsEqual(position, p)) === -1) {
+    for (const position of positions) {
+        if (result.findIndex(p => arePositionsEqual(position, p)) === -1) {
             result.push(position);
         }
     }
@@ -113,7 +113,10 @@ const positionsTheTailOfRopeVisitedAtLeastOnce = function (rope, directions) {
     const allTailPositions = [];
     directions.forEach(dir => {
         moveHeadTo(rope, dir);
-        makeTailAdjacentToHead(rope);
+        const allKnots = knots(rope);
+        for (let k = 0; k < allKnots.length - 1; k++) {
+            makeKnotFollowingAdjacentToKnotLeading(allKnots[k], allKnots[k + 1]);
+        }
         allTailPositions.push(position(tailOfRope(rope)));
     });
     return retainUniquePositions(allTailPositions);
@@ -127,12 +130,24 @@ const parseDirections = function (input) {
         });
 }
 
-test('tail rope position visits for test input', () => {
-    expect(positionsTheTailOfRopeVisitedAtLeastOnce(createRope(), parseDirections(testInput)).length).toBe(13);
+test('tail rope position visits for 2 knots rope for test input', () => {
+    expect(positionsTheTailOfRopeVisitedAtLeastOnce(createRope2Knots(), parseDirections(testInput)).length).toBe(13);
 });
 
-test('tail rope position visits for puzzle input', () => {
-    expect(positionsTheTailOfRopeVisitedAtLeastOnce(createRope(), parseDirections(puzzleInput)).length).toBe(6384);
+test('tail rope position visits for 10 knots rope for test input', () => {
+    expect(positionsTheTailOfRopeVisitedAtLeastOnce(createRope10Knots(), parseDirections(testInput)).length).toBe(1);
+});
+
+test('tail rope position visits for 10 knots rope for larger test input', () => {
+    expect(positionsTheTailOfRopeVisitedAtLeastOnce(createRope10Knots(), parseDirections(largerTestInput)).length).toBe(36);
+});
+
+test('tail rope position visits for 2 knots rope for puzzle input', () => {
+    expect(positionsTheTailOfRopeVisitedAtLeastOnce(createRope2Knots(), parseDirections(puzzleInput)).length).toBe(6384);
+});
+
+test('tail rope position visits for 10 knots rope for puzzle input', () => {
+    expect(positionsTheTailOfRopeVisitedAtLeastOnce(createRope10Knots(), parseDirections(puzzleInput)).length).toBe(2734);
 });
 
 
@@ -144,6 +159,15 @@ R 4
 D 1
 L 5
 R 2`;
+
+const largerTestInput = `R 5
+U 8
+L 8
+D 3
+R 17
+D 10
+L 25
+U 20`;
 
 const puzzleInput = `R 1
 U 1
