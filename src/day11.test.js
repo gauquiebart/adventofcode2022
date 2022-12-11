@@ -15,8 +15,8 @@ const worryLevelOfItem = function (item) {
     return item[1];
 }
 
-const createMonkey = function (monkeyName, items, operationFn, action) {
-    return [monkeyName, items, operationFn, action, 0];
+const createMonkey = function (monkeyName, items, operatorFn, action) {
+    return [monkeyName, items, operatorFn, action, 0];
 }
 
 const itemsOfMonkey = function (monkey) {
@@ -37,6 +37,10 @@ const operatorFnOfMonkey = function (monkey) {
 
 const actionOfMonkey = function (monkey) {
     return monkey[3][1];
+}
+
+const actionDivisorOfMonkey = function(monkey) {
+    return monkey[3][2];
 }
 
 const increaseTotalItemsInspectedOfMonkey = function(monkey, itemsInspected) {
@@ -76,7 +80,8 @@ const parseAction = function (predicateDivisor, consequentMonkey, alternativeMon
     return [`divisible by ${predicateDivisor} ? throw to ${consequentMonkey} : throw to ${alternativeMonkey}`,
         (worryLevel) => {
             return (worryLevel % predicateDivisor) === 0 ? consequentMonkey : alternativeMonkey;
-        }];
+        },
+        predicateDivisor];
 }
 
 const parseMonkeys = function (input) {
@@ -96,15 +101,15 @@ const parseMonkeys = function (input) {
         });
 }
 
-const countMonkeyBusiness = function (monkeys) {
-    for (let round = 1; round <= 20; round++) {
+const countMonkeyBusiness = function (monkeys, numberOfRounds, newWorryLevelFn) {
+    for (let round = 1; round <= numberOfRounds; round++) {
         monkeys.forEach(monkey => {
                 const items = itemsOfMonkey(monkey);
                 increaseTotalItemsInspectedOfMonkey(monkey, items.length);
                 items.forEach(item => {
                     const worryLevel = worryLevelOfItem(item);
                     const operator = operatorFnOfMonkey(monkey);
-                    const newWorryLevel = Math.floor(operator(worryLevel) / 3);
+                    const newWorryLevel = newWorryLevelFn(operator(worryLevel));
                     const actionFn = actionOfMonkey(monkey);
                     const toNewMonkey = actionFn(newWorryLevel);
                     addItemToMonkey(monkeys[toNewMonkey], createItem(newWorryLevel));
@@ -121,13 +126,30 @@ const countMonkeyBusiness = function (monkeys) {
         * totalItemsInspectedOfMonkey(monkeysSortedAccordingToTotalItemsInspected[1]);
 }
 
-test('count monkey business for test input', () => {
-    expect(countMonkeyBusiness(parseMonkeys(testInput))).toBe(10605);
+const divideByThreeAndFloor = (worryLevel) => Math.floor(worryLevel / 3);
+
+const buildWorryLevelReductionFunction = function(monkeys) {
+    const toModulo = monkeys.reduce((accumulator, currentValue) => accumulator * actionDivisorOfMonkey(currentValue), 1);
+    return (worryLevel) => worryLevel % toModulo;
+}
+test('count monkey business for dividebytthreeandfloor for test input', () => {
+    expect(countMonkeyBusiness(parseMonkeys(testInput), 20, divideByThreeAndFloor)).toBe(10605);
 });
 
-test('count monkey business for puzzle input', () => {
-    expect(countMonkeyBusiness(parseMonkeys(puzzleInput))).toBe(58322);
+test('count monkey business for dividebytthreeandfloor for puzzle input', () => {
+    expect(countMonkeyBusiness(parseMonkeys(puzzleInput), 20, divideByThreeAndFloor)).toBe(58322);
 });
+
+test('count monkey business for otherreduction for test input', () => {
+    const monkeys = parseMonkeys(testInput);
+    expect(countMonkeyBusiness(monkeys, 10000, buildWorryLevelReductionFunction(monkeys))).toBe(2713310158);
+});
+
+test('count monkey business for otherreduction for puzzle input', () => {
+    const monkeys = parseMonkeys(puzzleInput);
+    expect(countMonkeyBusiness(monkeys, 10000, buildWorryLevelReductionFunction(monkeys))).toBe(13937702909);
+});
+
 
 const testInput = `Monkey 0:
   Starting items: 79, 98
