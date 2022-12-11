@@ -76,10 +76,10 @@ const drawCrt = function (instructions) {
 
     });
 
-    console.log(crt
-        .reduce((accumulator, currentValue) =>
-                accumulator + currentValue + "\n"
-            , ``));
+    // console.log(crt
+    //     .reduce((accumulator, currentValue) =>
+    //             accumulator + currentValue + "\n"
+    //         , ``));
 
     return crt;
 }
