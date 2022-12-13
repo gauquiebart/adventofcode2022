@@ -1,82 +1,3 @@
-//borrowed shortest path from Dijkstra & the internet (https://github.com/noamsauerutley/shortest-path) ...
-const shortestDistanceNode = (distances, visited) => {
-    let shortest = null;
-
-    for (let node in distances) {
-        let currentIsShortest =
-            shortest === null || distances[node] < distances[shortest];
-        if (currentIsShortest && !visited.includes(node)) {
-            shortest = node;
-        }
-    }
-    return shortest;
-};
-
-const findShortestPath = (graph, startNode, endNode) => {
-    // establish object for recording distances from the start node
-    let distances = {};
-    distances[endNode] = "Infinity";
-    distances = Object.assign(distances, graph[startNode]);
-
-    // track paths
-    let parents = {endNode: null};
-    for (let child in graph[startNode]) {
-        parents[child] = startNode;
-    }
-
-    // track nodes that have already been visited
-    let visited = [];
-
-    // find the nearest node
-    let node = shortestDistanceNode(distances, visited);
-
-    // for that node
-    while (node) {
-        // find its distance from the start node & its child nodes
-        let distance = distances[node];
-        let children = graph[node];
-        // for each of those child nodes
-        for (let child in children) {
-            // make sure each child node is not the start node
-            if (String(child) === String(startNode)) {
-                continue;
-            } else {
-                // save the distance from the start node to the child node
-                let newdistance = distance + children[child];
-                // if there's no recorded distance from the start node to the child node in the distances object
-                // or if the recorded distance is shorter than the previously stored distance from the start node to the child node
-                // save the distance to the object
-                // record the path
-                if (!distances[child] || distances[child] > newdistance) {
-                    distances[child] = newdistance;
-                    parents[child] = node;
-                }
-            }
-        }
-        // move the node to the visited set
-        visited.push(node);
-        // move to the nearest neighbor node
-        node = shortestDistanceNode(distances, visited);
-    }
-
-    // using the stored paths from start node to end node
-    // record the shortest path
-    let shortestPath = [endNode];
-    let parent = parents[endNode];
-    while (parent) {
-        shortestPath.push(parent);
-        parent = parents[parent];
-    }
-    shortestPath.reverse();
-
-    // return the shortest path from start node to end node & its distance
-    let results = {
-        distance: distances[endNode],
-        path: shortestPath,
-    };
-
-    return results;
-};
 
 const graph = {
     start: {A: 5, B: 2},
@@ -87,6 +8,36 @@ const graph = {
     finish: {},
 };
 
+//borrowed from dijkstra and https://stackoverflow.com/questions/66505722/my-dijkstras-algorithm-implementation-does-not-return-shortest-path/66506658#66506658
+/* MinHeap minimised - taken from https://stackoverflow.com/a/66511107/5459839 */
+const MinHeap={siftDown(h,i=0,v=h[i]){if(i<h.length){let k=v[0];while(1){let j=i*2+1;if(j+1<h.length&&h[j][0]>h[j+1][0])j++;if(j>=h.length||k<=h[j][0])break;h[i]=h[j];i=j;}h[i]=v}},heapify(h){for(let i=h.length>>1;i--;)this.siftDown(h,i);return h},pop(h){return this.exchange(h,h.pop())},exchange(h,v){if(!h.length)return v;let w=h[0];this.siftDown(h,0,v);return w},push(h,v){let k=v[0],i=h.length,j;while((j=(i-1)>>1)>=0&&k<h[j][0]){h[i]=h[j];i=j}h[i]=v;return h}};
+
+function DijkstraShortestPath(graph, start, end) {
+    // Heap with one entry: distance is 0 at start, and there is no previous.
+    let heap = [[0, start, null]];
+    let prev = {};
+
+    while (heap.length) {
+        let [distance, current, cameFrom] = MinHeap.pop(heap);
+        if (current in prev) continue; // Already visited
+        prev[current] = cameFrom; // Mark as visited
+        if (current == end) { // Found!
+            // Reconstruct path
+            let path = [];
+            while (current) {
+                path.push(current);
+                current = prev[current];
+            }
+            path.reverse();
+            return { path, distance };
+        }
+        // Push unvisited neighbors on the heap
+        for (let [neighbor, edge] of Object.entries(graph[current])) {
+            if (!(neighbor in prev)) MinHeap.push(heap, [distance + edge, neighbor, current]);
+        }
+    }
+}
+
 const buildNodeName = function (row, column, nodeValue) {
     if (nodeValue === "S") {
         return `START`;
@@ -96,7 +47,6 @@ const buildNodeName = function (row, column, nodeValue) {
     }
     return `${row}:${column}_${nodeValue}`;
 }
-
 
 const vertexPossible = function (from, to) {
     if (to === 'E') {
@@ -153,19 +103,38 @@ const parseGraph = function (input) {
     return result;
 }
 
+const findAllStartPoints = function (graph) {
+    return Object.keys(graph)
+        .filter(key =>
+            key === 'START' ||
+            key.endsWith('a'));
+}
+
+const DijkstraShortestPathForAllStartPoints = function (graph) {
+    return Math.min(...findAllStartPoints(graph)
+        .map(startPoint => DijkstraShortestPath(graph, startPoint, "END"))
+        .filter(result => result !== undefined)
+        .map(result => result.distance));
+}
+
 test('find shortest path for test graph', () => {
-    expect(findShortestPath(graph, "start", "finish")).toEqual({"distance": 8, "path": ["start", "A", "D", "finish"]});
+    expect(DijkstraShortestPath(graph, "start", "finish").distance).toEqual(8);
 });
 
 test('find shortest path from Start to End for test input', () => {
-    const result = findShortestPath(parseGraph(testInput), "START", "END");
-    expect(result.distance).toEqual(31);
+    expect(DijkstraShortestPath(parseGraph(testInput), "START", "END").distance).toEqual(31);
+});
+
+test('find shortest path from A-ny to End for test input', () => {
+    expect(DijkstraShortestPathForAllStartPoints(parseGraph(testInput), "START", "END")).toEqual(29);
 });
 
 test('find shortest path from Start to End for puzzle input', () => {
-    //took 5 minutes :-(
-    //const result = findShortestPath(parseGraph(puzzleInput), "START", "END");
-    //expect(result.distance).toEqual(490);
+    expect(DijkstraShortestPath(parseGraph(puzzleInput), "START", "END").distance).toEqual(490);
+});
+
+test('find shortest path from A-ny to End for puzzle input', () => {
+    expect(DijkstraShortestPathForAllStartPoints(parseGraph(puzzleInput), "START", "END")).toEqual(488);
 });
 
 const testInput = `Sabqponm
