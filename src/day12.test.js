@@ -1,13 +1,4 @@
 
-const graph = {
-    start: {A: 5, B: 2},
-    A: {start: 1, C: 4, D: 2},
-    B: {A: 8, D: 7},
-    C: {D: 6, finish: 3},
-    D: {finish: 1},
-    finish: {},
-};
-
 //borrowed from dijkstra and https://stackoverflow.com/questions/66505722/my-dijkstras-algorithm-implementation-does-not-return-shortest-path/66506658#66506658
 /* MinHeap minimised - taken from https://stackoverflow.com/a/66511107/5459839 */
 const MinHeap={siftDown(h,i=0,v=h[i]){if(i<h.length){let k=v[0];while(1){let j=i*2+1;if(j+1<h.length&&h[j][0]>h[j+1][0])j++;if(j>=h.length||k<=h[j][0])break;h[i]=h[j];i=j;}h[i]=v}},heapify(h){for(let i=h.length>>1;i--;)this.siftDown(h,i);return h},pop(h){return this.exchange(h,h.pop())},exchange(h,v){if(!h.length)return v;let w=h[0];this.siftDown(h,0,v);return w},push(h,v){let k=v[0],i=h.length,j;while((j=(i-1)>>1)>=0&&k<h[j][0]){h[i]=h[j];i=j}h[i]=v;return h}};
@@ -21,7 +12,7 @@ function DijkstraShortestPath(graph, start, end) {
         let [distance, current, cameFrom] = MinHeap.pop(heap);
         if (current in prev) continue; // Already visited
         prev[current] = cameFrom; // Mark as visited
-        if (current == end) { // Found!
+        if (current === end) { // Found!
             // Reconstruct path
             let path = [];
             while (current) {
@@ -118,7 +109,7 @@ const DijkstraShortestPathForAllStartPoints = function (graph) {
 }
 
 test('find shortest path for test graph', () => {
-    expect(DijkstraShortestPath(graph, "start", "finish").distance).toEqual(8);
+    expect(DijkstraShortestPath(testGraph, "start", "finish").distance).toEqual(8);
 });
 
 test('find shortest path from Start to End for test input', () => {
@@ -136,6 +127,15 @@ test('find shortest path from Start to End for puzzle input', () => {
 test('find shortest path from A-ny to End for puzzle input', () => {
     expect(DijkstraShortestPathForAllStartPoints(parseGraph(puzzleInput), "START", "END")).toEqual(488);
 });
+
+const testGraph = {
+    start: {A: 5, B: 2},
+    A: {start: 1, C: 4, D: 2},
+    B: {A: 8, D: 7},
+    C: {D: 6, finish: 3},
+    D: {finish: 1},
+    finish: {},
+};
 
 const testInput = `Sabqponm
 abcryxxl
