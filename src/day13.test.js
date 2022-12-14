@@ -1,17 +1,23 @@
-const parseInput = function (input) {
+const parseInputAsPairs = function (input) {
     const pairs = input.split('\n\n');
     return pairs
         .map(p => p.split('\n').map(l => eval(l)));
 }
 
+const parseInputExcludingEmptyLines = function (input) {
+    return input.split('\n')
+        .filter(l => l !== "")
+        .map(l => eval(l));
+}
+
 let logLevel = -1;
 const log = function (str) {
-    if(logLevel > 0) {
+    if (logLevel > 0) {
         console.log('--'.repeat(logLevel) + '-> ' + str);
     }
 }
 
-const packetsInRightOrderWithLogging = function(left, right) {
+const packetsInRightOrderWithLogging = function (left, right) {
     logLevel = 0;
     const result = packetsInRightOrder(left, right);
     logLevel = -1;
@@ -19,17 +25,17 @@ const packetsInRightOrderWithLogging = function(left, right) {
 }
 
 const packetsInRightOrder = function (left, right) {
-    if(logLevel >= 0) {
+    if (logLevel >= 0) {
         logLevel = logLevel + 1;
     }
     log(`Compare ${left} to ${right}`);
     if (Number.isInteger(left) && Number.isInteger(right)) {
         log(`both values are integers`);
-        if(left === right) {
+        if (left === right) {
             log(`left is same as right --> continue`);
             return undefined;
         }
-        if(left < right) {
+        if (left < right) {
             log(`left is lower than right --> inputs are in the right order`);
             return true;
         }
@@ -42,7 +48,7 @@ const packetsInRightOrder = function (left, right) {
 
         log(`both values are lists`);
 
-        if(firstLeft === undefined && firstRight === undefined) {
+        if (firstLeft === undefined && firstRight === undefined) {
             log(`both lists are same length, no comparison decision made`);
             return undefined;
         }
@@ -53,7 +59,7 @@ const packetsInRightOrder = function (left, right) {
         }
 
         const comparisonResultFirst = packetsInRightOrder(firstLeft, firstRight);
-        if(comparisonResultFirst === undefined) {
+        if (comparisonResultFirst === undefined) {
             log('first left and first right are the same, continuing comparison on the rest of each');
             return packetsInRightOrder(restOfLeft, restOfRight);
         }
@@ -76,12 +82,31 @@ const packetsInRightOrder = function (left, right) {
     throw new Error("unhandled case");
 }
 
-const countRightOrderedPairs = function(pairs) {
+const countRightOrderedPairs = function (pairs) {
     return pairs.map((p, index) => {
         const [left, right] = p;
         const inRightOrder = packetsInRightOrder(left, right);
         return inRightOrder ? index + 1 : 0;
     }).reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+}
+
+const calculateDecoderKeyForDistressSignals = function (lines) {
+    const dividerPacket1 = [[2]];
+    const dividerPacket2 = [[6]];
+
+    lines.push(dividerPacket1);
+    lines.push(dividerPacket2);
+
+    lines.sort((left, right) => packetsInRightOrder(left, right) ? -1 : 1);
+
+    return lines
+        .reduce((accumulator, currentValue, currentIndex) =>
+                accumulator
+                * (((currentValue === dividerPacket1)
+                    || (currentValue === dividerPacket2)) ?
+                    currentIndex + 1
+                    : 1)
+            , 1);
 }
 
 test('both values are solely integers', () => {
@@ -126,15 +151,23 @@ test('nested arrays', () => {
     expect(packetsInRightOrder([7, 7, 7, 7], [7, 7, 7])).toBeFalsy();
     expect(packetsInRightOrder([], [3])).toBeTruthy();
     expect(packetsInRightOrder([[[]]], [[]])).toBeFalsy();
-    expect(packetsInRightOrder([1,[2,[3,[4,[5,6,7]]]],8,9], [1,[2,[3,[4,[5,6,0]]]],8,9])).toBeFalsy();
+    expect(packetsInRightOrder([1, [2, [3, [4, [5, 6, 7]]]], 8, 9], [1, [2, [3, [4, [5, 6, 0]]]], 8, 9])).toBeFalsy();
 });
 
 test('sum of indices of rightly ordered pairs for test input', () => {
-    expect(countRightOrderedPairs(parseInput(testInput))).toEqual(13);
+    expect(countRightOrderedPairs(parseInputAsPairs(testInput))).toEqual(13);
+});
+
+test('decoder key for distress signal for test input', () => {
+    expect(calculateDecoderKeyForDistressSignals(parseInputExcludingEmptyLines(testInput))).toEqual(140);
 });
 
 test('sum of indices of rightly ordered pairs for puzzle input', () => {
-    expect(countRightOrderedPairs(parseInput(puzzleInput))).toEqual(5330);
+    expect(countRightOrderedPairs(parseInputAsPairs(puzzleInput))).toEqual(5330);
+});
+
+test('decoder key for distress signal for puzzle input', () => {
+    expect(calculateDecoderKeyForDistressSignals(parseInputExcludingEmptyLines(puzzleInput))).toEqual(27648);
 });
 
 const testInput = `[1,1,3,1,1]
