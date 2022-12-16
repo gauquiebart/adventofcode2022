@@ -224,7 +224,6 @@ const growFloor = function(cave) {
         l.push(material);
         l.push(material);
     });
-    console.log(cave);
     return cave;
 }
 
@@ -247,9 +246,16 @@ test(`simulate sand with endless void for puzzle input`, () => {
 
 test(`simulate sand with floor for test input`, () => {
     const filledCave = pourSandOntoFloor(addInitialFloor(createCave(parseSegments(testInput))));
-    visualizeCave(filledCave);
+    //visualizeCave(filledCave);
     expect(countSand(filledCave)).toEqual(93);
 });
+
+test(`simulate sand with floor for puzzle input`, () => {
+    const filledCave = pourSandOntoFloor(addInitialFloor(createCave(parseSegments(puzzleInput))));
+    //visualizeCave(filledCave);
+    expect(countSand(filledCave)).toEqual(93);
+});
+
 
 
 
