@@ -22,12 +22,11 @@ const pourSand = function (cave) {
 
     while (true) {
         if (sandY === cave.length - 1) {
-            console.log(`off grid => ${sandY}`);
             break;
         }
 
-        const fallingSandCave = cave.map(l => l.slice());
-        fallingSandCave[sandY][sandX] = FALLING_SAND;
+        //const fallingSandCave = cave.map(l => l.slice());
+        //fallingSandCave[sandY][sandX] = FALLING_SAND;
         //visualizeCave(fallingSandCave);
 
         const oneStepDown = cave[sandY + 1][sandX];
