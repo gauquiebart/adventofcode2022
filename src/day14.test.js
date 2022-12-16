@@ -13,7 +13,7 @@ const visualizeCave = function (cave) {
     return cave;
 };
 
-const pourSand = function (cave) {
+const pourSandIntoVoid = function (cave) {
     const initialY = 1;
     const initialX = cave[0].indexOf(SOURCE);
 
@@ -53,6 +53,58 @@ const pourSand = function (cave) {
             cave[sandY][sandX] = SAND;
             //visualizeCave(cave);
         }
+        if (sandY === initialY
+            && sandX === initialX) {
+            break;
+        }
+        sandY = initialY;
+        sandX = initialX;
+    }
+
+    return cave;
+}
+
+const pourSandOntoFloor = function(cave) {
+    const initialY = 0;
+    let initialX = cave[0].indexOf(SOURCE);
+
+    let sandY = initialY;
+    let sandX = initialX;
+    while (true) {
+        let oneStepDown = cave[sandY + 1][sandX];
+        let oneStepDownAndToTheLeft = cave[sandY + 1][sandX - 1];
+        let oneStepDownAndToTheRight = cave[sandY + 1][sandX + 1];
+
+        if (oneStepDown === undefined
+            || oneStepDownAndToTheLeft === undefined
+            || oneStepDownAndToTheRight === undefined) {
+
+            growFloor(cave);
+
+            initialX = initialX + 2;
+
+            sandY = initialY;
+            sandX = initialX;
+
+            continue;
+        }
+
+        if (oneStepDown === AIR) {
+            sandY = sandY + 1;
+            continue;
+        } else if (oneStepDownAndToTheLeft === AIR) {
+            sandY = sandY + 1;
+            sandX = sandX - 1;
+            continue;
+        } else if (oneStepDownAndToTheRight === AIR) {
+            sandY = sandY + 1;
+            sandX = sandX + 1;
+            continue;
+        } else {
+            cave[sandY][sandX] = SAND;
+            //visualizeCave(cave);
+        }
+
         if (sandY === initialY
             && sandX === initialX) {
             break;
@@ -152,22 +204,54 @@ const parseSegments = function (input) {
         });
 };
 
+const addInitialFloor = function(cave) {
+    const newAirLine = new Array(cave[0].length);
+    newAirLine.fill(AIR);
+    cave.push(newAirLine);
+
+    const floor = new Array(cave[0].length);
+    floor.fill(ROCK);
+    cave.push(floor);
+
+    return cave;
+}
+
+const growFloor = function(cave) {
+    cave.forEach((l, index) => {
+        const material = index === (cave.length - 1) ? ROCK : AIR;
+        l.splice(0, 0, material);
+        l.splice(0, 0, material);
+        l.push(material);
+        l.push(material);
+    });
+    console.log(cave);
+    return cave;
+}
+
 test('can parse input', () => {
     expect(createCave(parseSegments(testInput))).toEqual(createCave(parseSegments(testInput).reverse()));
     expect(createCave(parseSegments(puzzleInput))).toEqual(createCave(parseSegments(puzzleInput).reverse()));
 })
 
-test(`simulate sand for test input`, () => {
-    const filledCave = pourSand(createCave(parseSegments(testInput)));
+test(`simulate sand with endless void for test input`, () => {
+    const filledCave = pourSandIntoVoid(createCave(parseSegments(testInput)));
     //visualizeCave(filledCave);
     expect(countSand(filledCave)).toEqual(24);
 });
 
-test(`simulate sand for puzzle input`, () => {
-    const filledCave = pourSand(createCave(parseSegments(puzzleInput)));
+test(`simulate sand with endless void for puzzle input`, () => {
+    const filledCave = pourSandIntoVoid(createCave(parseSegments(puzzleInput)));
     //visualizeCave(filledCave);
     expect(countSand(filledCave)).toEqual(994);
 });
+
+test(`simulate sand with floor for test input`, () => {
+    const filledCave = pourSandOntoFloor(addInitialFloor(createCave(parseSegments(testInput))));
+    visualizeCave(filledCave);
+    expect(countSand(filledCave)).toEqual(93);
+});
+
+
 
 const testInput = `498,4 -> 498,6 -> 496,6
 503,4 -> 502,4 -> 502,9 -> 494,9`;
