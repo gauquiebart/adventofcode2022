@@ -2,6 +2,7 @@ const ROCK = '#';
 const AIR = '.';
 const SOURCE = '+';
 const SAND = 'o';
+const FALLING_SAND = '~';
 
 const visualizeCave = function (cave) {
     const str = "CAVE:\n" + cave
@@ -20,17 +21,25 @@ const pourSand = function (cave) {
     let sandX = initialX;
 
     while (true) {
+        if (sandY === cave.length - 1) {
+            console.log(`off grid => ${sandY}`);
+            break;
+        }
 
-        const downOneStep = cave[sandY + 1][sandX];
+        const fallingSandCave = cave.map(l => l.slice());
+        fallingSandCave[sandY][sandX] = FALLING_SAND;
+        //visualizeCave(fallingSandCave);
+
+        const oneStepDown = cave[sandY + 1][sandX];
         const oneStepDownAndToTheLeft = cave[sandY + 1][sandX - 1];
         const oneStepDownAndToTheRight = cave[sandY + 1][sandX + 1];
 
-        if (downOneStep === undefined
+        if (oneStepDown === undefined
             || oneStepDownAndToTheLeft === undefined
             || oneStepDownAndToTheRight === undefined) {
             break;
         }
-        if (downOneStep === AIR) {
+        if (oneStepDown === AIR) {
             sandY = sandY + 1;
             continue;
         } else if (oneStepDownAndToTheLeft === AIR) {
@@ -43,6 +52,7 @@ const pourSand = function (cave) {
             continue;
         } else {
             cave[sandY][sandX] = SAND;
+            //visualizeCave(cave);
         }
         if (sandY === initialY
             && sandX === initialX) {
@@ -91,19 +101,19 @@ const createCave = function (segments) {
             x2 = x2 - lowestX;
             if (x1 === x2) {
                 if (y2 >= y1) {
-                    for (let y = y1; y < y2; y++) {
+                    for (let y = y1; y <= y2; y++) {
                         grid[y][x1] = ROCK;
                     }
                 }
                 if (y2 < y1) {
-                    for (let y = y1; y > y2; y--) {
+                    for (let y = y1; y >= y2; y--) {
                         grid[y][x1] = ROCK;
                     }
                 }
             }
             if (y1 === y2) {
                 if (x2 >= x1) {
-                    for (let x = x1; x < x2; x++) {
+                    for (let x = x1; x <= x2; x++) {
                         grid[y1][x] = ROCK;
                     }
                 }
@@ -116,7 +126,7 @@ const createCave = function (segments) {
 
         });
 
-    grid[0][500 - lowestX] = SOURCE;
+    grid[0][500 - lowestX]  = SOURCE;
 
     return grid;
 };
@@ -150,8 +160,14 @@ test('can parse input', () => {
 
 test(`simulate sand for test input`, () => {
     const filledCave = pourSand(createCave(parseSegments(testInput)));
-    visualizeCave(filledCave);
+    //visualizeCave(filledCave);
     expect(countSand(filledCave)).toEqual(24);
+});
+
+test(`simulate sand for puzzle input`, () => {
+    const filledCave = pourSand(createCave(parseSegments(puzzleInput)));
+    //visualizeCave(filledCave);
+    expect(countSand(filledCave)).toEqual(994);
 });
 
 const testInput = `498,4 -> 498,6 -> 496,6
