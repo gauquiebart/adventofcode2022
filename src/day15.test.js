@@ -1,5 +1,26 @@
+class ValueObjectFactory {
+
+    static _valueObjects = new Map();
+
+    static asValueObject(val, key1, key2) {
+        let cachedValueForKey1 = this._valueObjects.get(key1);
+        if(cachedValueForKey1 === undefined) {
+            cachedValueForKey1 = new Map();
+            this._valueObjects.set(key1, cachedValueForKey1);
+        }
+
+        let cachedValue = cachedValueForKey1.get(key2);
+        if(cachedValue !== undefined) {
+            return cachedValue
+        }
+        cachedValueForKey1.set(key2, val);
+        return val;
+    }
+
+}
+
 const createPoint = function (x, y) {
-    return [x, y];
+    return ValueObjectFactory.asValueObject([x, y], x, y);
 }
 
 const x = function (point) {
@@ -10,11 +31,11 @@ const y = function (point) {
     return point[1];
 }
 
-const isEqualPoint = function(p1, p2) {
+const isEqualPoint = function (p1, p2) {
     return x(p1) === x(p2) && y(p1) === y(p2);
 }
 
-const filterRow = function(row) {
+const filterRow = function (row) {
     return (p) => y(p) === row;
 }
 
@@ -25,14 +46,14 @@ const manDist = function (p1, p2) {
 
 const calculateCoverage = function (s, b) {
     const md = manDist(s, b);
-    const scanningPositions = [];
+    const coverage = [];
     let columns = 1;
     let columnsDelta = 2;
     for (let row = y(s) - md; row <= y(s) + md; row++) {
         const startColumn = x(s) - Math.floor(columns / 2);
         const endColumn = startColumn + columns;
         for (let column = startColumn; column < endColumn; column++) {
-            scanningPositions.push(createPoint(column, row));
+            coverage.push(createPoint(column, row));
         }
         columns = columns + columnsDelta;
         if ((row + 1) === y(s)) {
@@ -40,21 +61,17 @@ const calculateCoverage = function (s, b) {
         }
     }
 
-    return scanningPositions;
+    return coverage;
 }
 
-const calculateOverallCoverageExcludingBeaconsItself = function(sensors) {
-    const beaconPositions = sensors
-        .map(s => pointOfBeacon(closestBeaconOfSensor(s)));
-    return sensors
-        .flatMap(s => rhombusOfSensor(s))
-        .reduce((acc, val) => {
-            if(acc.find(el => isEqualPoint(el, val)) === undefined) {
-                acc.push(val);
-            }
-            return acc;
-        }, [])
-        .filter(p => beaconPositions.find(el => isEqualPoint(el, p)) === undefined);
+const calculateOverallCoverageExcludingBeaconsItself = function (sensors) {
+    const beaconPositions = new Set(sensors
+        .map(s => pointOfBeacon(closestBeaconOfSensor(s))));
+    const fullCoverage = new Set(sensors
+        .flatMap(s => rhombusOfSensor(s)));
+    return new Set(
+        Array.from(fullCoverage).filter(x => !beaconPositions.has(x))
+    )
 }
 
 const createSensor = function (x, y, closestBeacon) {
@@ -129,8 +146,12 @@ test('can calculate coverage rhombus', () => {
     ]);
 });
 
-test('can calculate coverage from all sensors input', () => {
-    expect(calculateOverallCoverageExcludingBeaconsItself(parseInput(testInput)).filter(filterRow(10)).length).toEqual(26);
+test('can calculate coverage from all sensors for test input', () => {
+    expect(Array.from(calculateOverallCoverageExcludingBeaconsItself(parseInput(testInput))).filter(filterRow(10)).length).toEqual(26);
+});
+
+test('can calculate coverage from all sensors for puzzle input', () => {
+    expect(calculateOverallCoverageExcludingBeaconsItself(parseInput(puzzleInput)).filter(filterRow(200000)).length).toEqual(26283);
 });
 
 
@@ -149,3 +170,26 @@ Sensor at x=16, y=7: closest beacon is at x=15, y=3
 Sensor at x=14, y=3: closest beacon is at x=15, y=3
 Sensor at x=20, y=1: closest beacon is at x=15, y=3`;
 
+puzzleInput = `Sensor at x=3844106, y=3888618: closest beacon is at x=3225436, y=4052707
+Sensor at x=1380352, y=1857923: closest beacon is at x=10411, y=2000000
+Sensor at x=272, y=1998931: closest beacon is at x=10411, y=2000000
+Sensor at x=2119959, y=184595: closest beacon is at x=2039500, y=-250317
+Sensor at x=1675775, y=2817868: closest beacon is at x=2307516, y=3313037
+Sensor at x=2628344, y=2174105: closest beacon is at x=3166783, y=2549046
+Sensor at x=2919046, y=3736158: closest beacon is at x=3145593, y=4120490
+Sensor at x=16, y=2009884: closest beacon is at x=10411, y=2000000
+Sensor at x=2504789, y=3988246: closest beacon is at x=3145593, y=4120490
+Sensor at x=2861842, y=2428768: closest beacon is at x=3166783, y=2549046
+Sensor at x=3361207, y=130612: closest beacon is at x=2039500, y=-250317
+Sensor at x=831856, y=591484: closest beacon is at x=-175938, y=1260620
+Sensor at x=3125600, y=1745424: closest beacon is at x=3166783, y=2549046
+Sensor at x=21581, y=3243480: closest beacon is at x=10411, y=2000000
+Sensor at x=2757890, y=3187285: closest beacon is at x=2307516, y=3313037
+Sensor at x=3849488, y=2414083: closest beacon is at x=3166783, y=2549046
+Sensor at x=3862221, y=757146: closest beacon is at x=4552923, y=1057347
+Sensor at x=3558604, y=2961030: closest beacon is at x=3166783, y=2549046
+Sensor at x=3995832, y=1706663: closest beacon is at x=4552923, y=1057347
+Sensor at x=1082213, y=3708082: closest beacon is at x=2307516, y=3313037
+Sensor at x=135817, y=1427041: closest beacon is at x=-175938, y=1260620
+Sensor at x=2467372, y=697908: closest beacon is at x=2039500, y=-250317
+Sensor at x=3448383, y=3674287: closest beacon is at x=3225436, y=4052707`;
