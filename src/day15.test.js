@@ -74,9 +74,44 @@ const calculateOverallCoverageExcludingBeaconsItself = function (sensors) {
     )
 }
 
+const calculateCoverageFromAllSensorsForRow = function(sensors, row) {
+    const minX = sensors.reduce((acc, sensor) => Math.min(acc, x(pointOfSensor(sensor)) - manDistOfSensor(sensor)), Number.MAX_VALUE);
+    const maxX = sensors.reduce((acc, sensor) => Math.max(acc, x(pointOfSensor(sensor)) + manDistOfSensor(sensor)), Number.MIN_VALUE);
+
+    const result = new Set();
+    for(let column = minX; column <= maxX; column++) {
+        const p = createPoint(column, row);
+
+        const overlapping = sensors
+            .reduce((acc, sensor) => {
+                if(acc) {
+                    return acc;
+                }
+                const sensorPoint = pointOfSensor(sensor);
+                const beaconPoint = pointOfBeacon(closestBeaconOfSensor(sensor));
+                const manDistSensorPointToP = manDist(sensorPoint, p);
+                const sensorCoversPoint = manDistSensorPointToP <= manDistOfSensor(sensor);
+
+                return beaconPoint !== p && sensorCoversPoint;
+            }, false);
+
+        if (overlapping) {
+            result.add(p);
+        }
+    }
+    return result;
+}
+
+
 const createSensor = function (x, y, closestBeacon) {
     const origin = createPoint(x, y);
     return ['sensor', origin, closestBeacon, calculateCoverage(origin, pointOfBeacon(closestBeacon))];
+}
+
+const createSensorNoCoverage = function (x, y, closestBeacon) {
+    const sensorOrigin = createPoint(x, y);
+    const beaconPoint = pointOfBeacon(closestBeacon);
+    return ['sensor', sensorOrigin, closestBeacon, manDist(sensorOrigin, beaconPoint)];
 }
 
 const pointOfSensor = function (sensor) {
@@ -91,6 +126,10 @@ const rhombusOfSensor = function (sensor) {
     return sensor[3];
 }
 
+const manDistOfSensor = function (sensor) {
+    return sensor[3];
+}
+
 const createBeacon = function (x, y) {
     return ['beacon', createPoint(x, y)];
 }
@@ -99,7 +138,7 @@ const pointOfBeacon = function (beacon) {
     return beacon[1];
 }
 
-const parseInput = function (input) {
+const parseInput = function (input, sensorFn) {
     return input
         .split('\n')
         .map(l => {
@@ -107,7 +146,7 @@ const parseInput = function (input) {
             const sensorParsed = sensor.match(/Sensor at x=(-?)(\d.*), y=(-?)(\d.*)/i);
             const beaconParsed = beacon.match(/closest beacon is at x=(-?)(\d.*), y=(-?)(\d.*)/i);
             const closestBeacon = createBeacon(+(beaconParsed[1] + beaconParsed[2]), +(beaconParsed[3] + beaconParsed[4]));
-            return createSensor(+(sensorParsed[1] + sensorParsed[2]), +(sensorParsed[3] + sensorParsed[4]), closestBeacon);
+            return sensorFn(+(sensorParsed[1] + sensorParsed[2]), +(sensorParsed[3] + sensorParsed[4]), closestBeacon);
         });
 }
 
@@ -147,11 +186,15 @@ test('can calculate coverage rhombus', () => {
 });
 
 test('can calculate coverage from all sensors for test input', () => {
-    expect(Array.from(calculateOverallCoverageExcludingBeaconsItself(parseInput(testInput))).filter(filterRow(10)).length).toEqual(26);
+    expect(Array.from(calculateOverallCoverageExcludingBeaconsItself(parseInput(testInput, createSensor))).filter(filterRow(10)).length).toEqual(26);
+});
+
+test('can calculate coverage from all sensors for a specific row for test input', () => {
+    expect(calculateCoverageFromAllSensorsForRow(parseInput(testInput, createSensorNoCoverage), 10).size).toEqual(26);
 });
 
 test('can calculate coverage from all sensors for puzzle input', () => {
-    expect(calculateOverallCoverageExcludingBeaconsItself(parseInput(puzzleInput)).filter(filterRow(200000)).length).toEqual(26283);
+    //expect(calculateOverallCoverageExcludingBeaconsItself(parseInput(puzzleInput)).filter(filterRow(200000)).length).toEqual(26283);
 });
 
 
