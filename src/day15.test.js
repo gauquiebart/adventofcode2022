@@ -4,13 +4,13 @@ class ValueObjectFactory {
 
     static asValueObject(val, key1, key2) {
         let cachedValueForKey1 = this._valueObjects.get(key1);
-        if(cachedValueForKey1 === undefined) {
+        if (cachedValueForKey1 === undefined) {
             cachedValueForKey1 = new Map();
             this._valueObjects.set(key1, cachedValueForKey1);
         }
 
         let cachedValue = cachedValueForKey1.get(key2);
-        if(cachedValue !== undefined) {
+        if (cachedValue !== undefined) {
             return cachedValue
         }
         cachedValueForKey1.set(key2, val);
@@ -19,8 +19,12 @@ class ValueObjectFactory {
 
 }
 
-const createPoint = function (x, y) {
+const createPointValueObject = function (x, y) {
     return ValueObjectFactory.asValueObject([x, y], x, y);
+}
+
+const createPoint = function (x, y) {
+    return [x, y];
 }
 
 const x = function (point) {
@@ -53,7 +57,7 @@ const calculateCoverage = function (s, b) {
         const startColumn = x(s) - Math.floor(columns / 2);
         const endColumn = startColumn + columns;
         for (let column = startColumn; column < endColumn; column++) {
-            coverage.push(createPoint(column, row));
+            coverage.push(createPointValueObject(column, row));
         }
         columns = columns + columnsDelta;
         if ((row + 1) === y(s)) {
@@ -74,42 +78,41 @@ const calculateOverallCoverageExcludingBeaconsItself = function (sensors) {
     )
 }
 
-const calculateCoverageFromAllSensorsForRow = function(sensors, row) {
+const calculateCoverageFromAllSensorsForRow = function (sensors, row) {
     const minX = sensors.reduce((acc, sensor) => Math.min(acc, x(pointOfSensor(sensor)) - manDistOfSensor(sensor)), Number.MAX_VALUE);
     const maxX = sensors.reduce((acc, sensor) => Math.max(acc, x(pointOfSensor(sensor)) + manDistOfSensor(sensor)), Number.MIN_VALUE);
 
-    const result = new Set();
-    for(let column = minX; column <= maxX; column++) {
-        const p = createPoint(column, row);
+    const xMatches = new Array(maxX - minX);
 
-        const overlapping = sensors
-            .reduce((acc, sensor) => {
-                if(acc) {
-                    return acc;
+    for(let sensor of sensors) {
+        const [sx, sy] = pointOfSensor(sensor);
+        const [bsx, bsy] = pointOfBeacon(closestBeaconOfSensor(sensor));
+        const md = manDistOfSensor(sensor);
+        const yDiff = Math.abs(sy - row);
+
+        for (let column = (sx - md); column <= (sx + md); column++) {
+            const manDistSensorPointToP = Math.abs(sx - column) + yDiff;
+            if(manDistSensorPointToP <= md) {
+                if(bsx === column && bsy === row) {
+                    continue;
                 }
-                const sensorPoint = pointOfSensor(sensor);
-                const beaconPoint = pointOfBeacon(closestBeaconOfSensor(sensor));
-                const manDistSensorPointToP = manDist(sensorPoint, p);
-                const sensorCoversPoint = manDistSensorPointToP <= manDistOfSensor(sensor);
-
-                return beaconPoint !== p && sensorCoversPoint;
-            }, false);
-
-        if (overlapping) {
-            result.add(p);
+                xMatches[column - minX] = 1;
+            }
         }
     }
-    return result;
+
+    return xMatches
+        .reduce((acc, value) => acc + (value != null ? 1 : 0), 0);
 }
 
 
 const createSensor = function (x, y, closestBeacon) {
-    const origin = createPoint(x, y);
+    const origin = createPointValueObject(x, y);
     return ['sensor', origin, closestBeacon, calculateCoverage(origin, pointOfBeacon(closestBeacon))];
 }
 
 const createSensorNoCoverage = function (x, y, closestBeacon) {
-    const sensorOrigin = createPoint(x, y);
+    const sensorOrigin = createPointValueObject(x, y);
     const beaconPoint = pointOfBeacon(closestBeacon);
     return ['sensor', sensorOrigin, closestBeacon, manDist(sensorOrigin, beaconPoint)];
 }
@@ -131,7 +134,7 @@ const manDistOfSensor = function (sensor) {
 }
 
 const createBeacon = function (x, y) {
-    return ['beacon', createPoint(x, y)];
+    return ['beacon', createPointValueObject(x, y)];
 }
 
 const pointOfBeacon = function (beacon) {
@@ -151,7 +154,7 @@ const parseInput = function (input, sensorFn) {
 }
 
 test('can calculate Manhattan distance', () => {
-    expect(manDist(createPoint(8, 7), createPoint(2, 10))).toEqual(9);
+    expect(manDist(createPointValueObject(8, 7), createPointValueObject(2, 10))).toEqual(9);
 });
 
 test('can calculate coverage rhombus', () => {
@@ -190,11 +193,16 @@ test('can calculate coverage from all sensors for test input', () => {
 });
 
 test('can calculate coverage from all sensors for a specific row for test input', () => {
-    expect(calculateCoverageFromAllSensorsForRow(parseInput(testInput, createSensorNoCoverage), 10).size).toEqual(26);
+    expect(calculateCoverageFromAllSensorsForRow(parseInput(testInput, createSensorNoCoverage), 10)).toEqual(26);
 });
 
 test('can calculate coverage from all sensors for puzzle input', () => {
+    //goes out of memory ... and is very unusable slow
     //expect(calculateOverallCoverageExcludingBeaconsItself(parseInput(puzzleInput)).filter(filterRow(200000)).length).toEqual(26283);
+});
+
+test('can calculate coverage from all sensors for a specific row for puzzle input', () => {
+    //expect(calculateCoverageFromAllSensorsForRow(parseInput(puzzleInput, createSensorNoCoverage), 5186862).size).toEqual(26);
 });
 
 
