@@ -253,7 +253,7 @@ test(`simulate sand with floor for test input`, () => {
 test(`simulate sand with floor for puzzle input`, () => {
     const filledCave = pourSandOntoFloor(addInitialFloor(createCave(parseSegments(puzzleInput))));
     //visualizeCave(filledCave);
-    expect(countSand(filledCave)).toEqual(93);
+    expect(countSand(filledCave)).toEqual(26283);
 });
 
 
