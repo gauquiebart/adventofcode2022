@@ -202,7 +202,7 @@ test('can calculate coverage from all sensors for puzzle input', () => {
 });
 
 test('can calculate coverage from all sensors for a specific row for puzzle input', () => {
-    //expect(calculateCoverageFromAllSensorsForRow(parseInput(puzzleInput, createSensorNoCoverage), 5186862).size).toEqual(26);
+    expect(calculateCoverageFromAllSensorsForRow(parseInput(puzzleInput, createSensorNoCoverage), 2000000)).toEqual(4919281);
 });
 
 
