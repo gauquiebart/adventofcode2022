@@ -78,13 +78,15 @@ const calculateOverallCoverageExcludingBeaconsItself = function (sensors) {
     )
 }
 
+
+
 const calculateCoverageFromAllSensorsForRow = function (sensors, row) {
     const minX = sensors.reduce((acc, sensor) => Math.min(acc, x(pointOfSensor(sensor)) - manDistOfSensor(sensor)), Number.MAX_VALUE);
     const maxX = sensors.reduce((acc, sensor) => Math.max(acc, x(pointOfSensor(sensor)) + manDistOfSensor(sensor)), Number.MIN_VALUE);
 
     const xMatches = new Array(maxX - minX);
 
-    for(let sensor of sensors) {
+    for (let sensor of sensors) {
         const [sx, sy] = pointOfSensor(sensor);
         const [bsx, bsy] = pointOfBeacon(closestBeaconOfSensor(sensor));
         const md = manDistOfSensor(sensor);
@@ -92,8 +94,8 @@ const calculateCoverageFromAllSensorsForRow = function (sensors, row) {
 
         for (let column = (sx - md); column <= (sx + md); column++) {
             const manDistSensorPointToP = Math.abs(sx - column) + yDiff;
-            if(manDistSensorPointToP <= md) {
-                if(bsx === column && bsy === row) {
+            if (manDistSensorPointToP <= md) {
+                if (bsx === column && bsy === row) {
                     continue;
                 }
                 xMatches[column - minX] = 1;
@@ -103,6 +105,34 @@ const calculateCoverageFromAllSensorsForRow = function (sensors, row) {
 
     return xMatches
         .reduce((acc, value) => acc + (value != null ? 1 : 0), 0);
+}
+
+const findDistressBeacon = function(sensors, maxX, maxY) {
+
+    for(let row = 0; row <= maxY; row++) {
+
+        const xMatches = new Array(maxX);
+        xMatches.fill(0);
+
+        for (let sensor of sensors) {
+            const [sx, sy] = pointOfSensor(sensor);
+            const md = manDistOfSensor(sensor);
+            const yDiff = Math.abs(sy - row);
+            for (let column = Math.max(0, (sx - md)); column <= Math.min(maxX, (sx + md)); column++) {
+                const manDistSensorPointToP = Math.abs(sx - column) + yDiff;
+                if (manDistSensorPointToP <= md) {
+                    xMatches[column] = 1;
+                }
+            }
+        }
+
+        if(xMatches
+            .reduce((acc, value) => acc + value, 0) === (maxX + 1)) {
+            continue;
+        } else {
+            return [xMatches.indexOf(0), row];
+        }
+    }
 }
 
 
@@ -194,6 +224,10 @@ test('can calculate coverage from all sensors for test input', () => {
 
 test('can calculate coverage from all sensors for a specific row for test input', () => {
     expect(calculateCoverageFromAllSensorsForRow(parseInput(testInput, createSensorNoCoverage), 10)).toEqual(26);
+});
+
+test('find distress beacon for test input', () => {
+    expect(findDistressBeacon(parseInput(testInput, createSensorNoCoverage), 19, 19)).toEqual(createPoint(14, 11));
 });
 
 test('can calculate coverage from all sensors for puzzle input', () => {
