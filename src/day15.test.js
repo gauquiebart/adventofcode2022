@@ -79,7 +79,6 @@ const calculateOverallCoverageExcludingBeaconsItself = function (sensors) {
 }
 
 
-
 const calculateCoverageFromAllSensorsForRow = function (sensors, row) {
     const minX = sensors.reduce((acc, sensor) => Math.min(acc, x(pointOfSensor(sensor)) - manDistOfSensor(sensor)), Number.MAX_VALUE);
     const maxX = sensors.reduce((acc, sensor) => Math.max(acc, x(pointOfSensor(sensor)) + manDistOfSensor(sensor)), Number.MIN_VALUE);
@@ -107,26 +106,36 @@ const calculateCoverageFromAllSensorsForRow = function (sensors, row) {
         .reduce((acc, value) => acc + (value != null ? 1 : 0), 0);
 }
 
-const findDistressBeacon = function(sensors, maxX, maxY) {
+const createInterval = function(from, to) {
+    return [from, to];
+}
 
-    for(let row = 0; row <= maxY; row++) {
+const isInInterval = function(interval, value) {
+    const [from, to] = interval;
+    return value >= from && value <= to;
+}
 
-        const xMatches = new Array(maxX);
+const findDistressBeacon = function (sensors, maxX, maxY) {
+
+    for (let row = 0; row <= maxY; row++) {
+        const xMatches = new Array(maxX + 1);
         xMatches.fill(0);
-
         for (let sensor of sensors) {
             const [sx, sy] = pointOfSensor(sensor);
             const md = manDistOfSensor(sensor);
-            const yDiff = Math.abs(sy - row);
-            for (let column = Math.max(0, (sx - md)); column <= Math.min(maxX, (sx + md)); column++) {
-                const manDistSensorPointToP = Math.abs(sx - column) + yDiff;
-                if (manDistSensorPointToP <= md) {
-                    xMatches[column] = 1;
-                }
+            const rowsInterval = createInterval(sy - md, sy + md);
+            if (!isInInterval(rowsInterval, row)) {
+                continue;
             }
+
+            const xExpand = md - Math.abs(sy - row);
+            const startColumn = Math.max(0, sx - xExpand);
+            const endColumn = Math.min(maxX, sx + xExpand);
+
+            xMatches.fill(1, startColumn, endColumn + 1);
         }
 
-        if(xMatches
+        if (xMatches
             .reduce((acc, value) => acc + value, 0) === (maxX + 1)) {
             continue;
         } else {
@@ -226,8 +235,8 @@ test('can calculate coverage from all sensors for a specific row for test input'
     expect(calculateCoverageFromAllSensorsForRow(parseInput(testInput, createSensorNoCoverage), 10)).toEqual(26);
 });
 
-test('find distress beacon for test input', () => {
-    expect(findDistressBeacon(parseInput(testInput, createSensorNoCoverage), 19, 19)).toEqual(createPoint(14, 11));
+test.only('find distress beacon for test input', () => {
+    expect(findDistressBeacon(parseInput(testInput, createSensorNoCoverage), (20 - 1), (20 - 1))).toEqual(createPoint(14, 11));
 });
 
 test('can calculate coverage from all sensors for puzzle input', () => {
@@ -239,6 +248,9 @@ test('can calculate coverage from all sensors for a specific row for puzzle inpu
     expect(calculateCoverageFromAllSensorsForRow(parseInput(puzzleInput, createSensorNoCoverage), 2000000)).toEqual(4919281);
 });
 
+test('find distress beacon for puzzle input', () => {
+    expect(findDistressBeacon(parseInput(puzzleInput, createSensorNoCoverage), (4000000 - 1), (4000000 - 1))).toEqual(createPoint(14, 11));
+});
 
 testInput = `Sensor at x=2, y=18: closest beacon is at x=-2, y=15
 Sensor at x=9, y=16: closest beacon is at x=10, y=16
