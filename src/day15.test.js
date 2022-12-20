@@ -68,6 +68,7 @@ const calculateCoverage = function (s, b) {
     return coverage;
 }
 
+//most elegant solution, but grids are just too big for Javascript
 const calculateOverallCoverageExcludingBeaconsItself = function (sensors) {
     const beaconPositions = new Set(sensors
         .map(s => pointOfBeacon(closestBeaconOfSensor(s))));
@@ -160,9 +161,14 @@ const findDistressBeacon = function (sensors, maxX, maxY) {
         if(mergedIntervals.length === 1) {
             continue;
         } else {
-            return [mergedIntervals[0][1] + 1, row];
+            const xGap = mergedIntervals[0][1] + 1;
+            return [xGap, row];
         }
     }
+}
+
+const calculateTuningFrequency = function(beaconPosition) {
+    return x(beaconPosition) * 4000000 + y(beaconPosition);
 }
 
 
@@ -268,20 +274,17 @@ test('can calculate coverage from all sensors for a specific row for test input'
 });
 
 test('find distress beacon for test input', () => {
-    expect(findDistressBeacon(parseInput(testInput, createSensorNoCoverage), (20 - 1), (20 - 1))).toEqual(createPoint(14, 11));
-});
-
-test('can calculate coverage from all sensors for puzzle input', () => {
-    //goes out of memory ... and is very unusable slow
-    //expect(calculateOverallCoverageExcludingBeaconsItself(parseInput(puzzleInput)).filter(filterRow(200000)).length).toEqual(26283);
+    expect(calculateTuningFrequency(findDistressBeacon(parseInput(testInput, createSensorNoCoverage), (20 - 1), (20 - 1)))).toEqual(56000011);
 });
 
 test('can calculate coverage from all sensors for a specific row for puzzle input', () => {
+    //works, but takes 12+ seconds
     //expect(calculateCoverageFromAllSensorsForRow(parseInput(puzzleInput, createSensorNoCoverage), 2000000)).toEqual(4919281);
 });
 
 test('find distress beacon for puzzle input', () => {
-    //expect(findDistressBeacon(parseInput(puzzleInput, createSensorNoCoverage), (4000000 - 1), (4000000 - 1))).toEqual(createPoint(14, 11));
+    //works, but takes 30+ seconds
+    //expect(calculateTuningFrequency(findDistressBeacon(parseInput(puzzleInput, createSensorNoCoverage), (4000000 - 1), (4000000 - 1)))).toEqual(12630143363767);
 });
 
 testInput = `Sensor at x=2, y=18: closest beacon is at x=-2, y=15
