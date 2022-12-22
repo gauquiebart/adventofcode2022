@@ -12,6 +12,25 @@ class Valve {
     }
 }
 
+class Node {
+    constructor(valve, actions) {
+        this.valve = valve;
+        this.actions = actions;
+    }
+
+    setActions(actions) {
+        this.actions = actions;
+    }
+}
+
+class Action {
+    constructor(takeTunnel, openValve, node) {
+        this.takeTunnel = takeTunnel;
+        this.openValve = openValve;
+        this.node = node;
+    }
+}
+
 const parseInput = function (input) {
     const valves = input
         .split('\n')
@@ -29,14 +48,92 @@ const parseInput = function (input) {
                     .match(/.*; tunnels? leads? to valves? (.*)/i)[1]
                     .split(",")
                     .map(valveName => valves.find(v => v.name === valveName.trim()));
-            valveToUpdate.setTunnels(new Set([...tunnelsToOtherValves]));
+            valveToUpdate.setTunnels(tunnelsToOtherValves);
 
         });
-    return new Set([...valves]);
+
+    const result = new Map();
+    new Set([...valves])
+        .forEach(valve =>
+            result.set(valve.name, valve));
+    return result;
+}
+
+const permuteActions = function (valves, start, depth) {
+    if(depth === 0) {
+        return undefined;
+    }
+    const valve = valves.get(start);
+    const tunnels = valve.tunnels;
+    const actions = tunnels.map(tunnel => new Action(true, false, new Node(tunnel)));
+    if(valve.flowRate > 0) {
+        actions.push(new Action(false, true, new Node(valve)));
+    }
+    const result =
+        new Node(
+            valve,
+            actions);
+
+    for(let action of result.actions) {
+        let node = action.node;
+        const nodeWithActions = permuteActions(valves, node.valve.name, depth - 1);
+        if(nodeWithActions){
+            node.setActions(nodeWithActions.actions);
+        }
+    }
+    return result;
 }
 
 test('can parse test input', () => {
     expect(parseInput(testInput).size).toEqual(10);
+});
+
+test.only('can permute actions up to a given depth', () => {
+    const valves = parseInput(testInput);
+
+    const valveAA = valves.get("AA");
+    const valveBB = valves.get("BB");
+    const valveCC = valves.get("CC");
+    const valveDD = valves.get("DD");
+    const valveEE = valves.get("EE");
+    const valveII = valves.get("II");
+    const valveJJ = valves.get("JJ");
+
+    const actual = permuteActions(valves, "AA", 2);
+
+    expect(actual)
+        .toEqual(
+            new Node(
+                valveAA,
+                [
+                    new Action(
+                        true,
+                        false,
+                        new Node(
+                            valveDD,
+                            [
+                                new Action(true, false, new Node(valveCC)),
+                                new Action(true, false, new Node(valveAA)),
+                                new Action(true, false, new Node(valveEE)),
+                                new Action(false, true, new Node(valveDD))])),
+                    new Action(
+                        true,
+                        false,
+                        new Node(
+                            valveII,
+                            [
+                                new Action(true, false, new Node(valveAA)),
+                                new Action(true, false, new Node(valveJJ))
+                            ])),
+                    new Action(true,
+                        false,
+                        new Node(
+                            valveBB,
+                            [
+                                new Action(true, false, new Node(valveCC)),
+                                new Action(true, false, new Node(valveAA)),
+                                new Action(false, true, new Node(valveBB))
+                            ]))]));
 });
 
 test('can parse puzzle input', () => {
