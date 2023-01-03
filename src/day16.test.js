@@ -60,13 +60,13 @@ const parseInput = function (input) {
 }
 
 const permuteActions = function (valves, start, depth) {
-    if(depth === 0) {
+    if (depth === 0) {
         return undefined;
     }
     const valve = valves.get(start);
     const tunnels = valve.tunnels;
     const actions = tunnels.map(tunnel => new Action(true, false, new Node(tunnel)));
-    if(valve.flowRate > 0) {
+    if (valve.flowRate > 0) {
         actions.push(new Action(false, true, new Node(valve)));
     }
     const result =
@@ -74,21 +74,45 @@ const permuteActions = function (valves, start, depth) {
             valve,
             actions);
 
-    for(let action of result.actions) {
+    for (let action of result.actions) {
         let node = action.node;
         const nodeWithActions = permuteActions(valves, node.valve.name, depth - 1);
-        if(nodeWithActions){
+        if (nodeWithActions) {
             node.setActions(nodeWithActions.actions);
         }
     }
     return result;
 }
 
+const findHighestTotalPressure = function (valveWithActions, valves, stack = [], openedValves = [], pressureBuildUp = 0) {
+    if (valveWithActions.actions === undefined) {
+        return pressureBuildUp;
+    }
+
+    const {_, actions} = valveWithActions;
+    for (let action of actions) {
+        const {node, openValve} = action;
+        stack.push(node.valve);
+        if (openValve) {
+            openedValves.push(node.valve);
+        }
+        pressureBuildUp =
+            Math.max(
+                findHighestTotalPressure(node, valves, stack, openedValves, pressureBuildUp),
+                pressureBuildUp);
+
+        stack.pop();
+    }
+
+
+    return [stack, pressureBuildUp];
+}
+
 test('can parse test input', () => {
     expect(parseInput(testInput).size).toEqual(10);
 });
 
-test.only('can permute actions up to a given depth', () => {
+test('can permute actions up to a given depth', () => {
     const valves = parseInput(testInput);
 
     const valveAA = valves.get("AA");
@@ -135,6 +159,21 @@ test.only('can permute actions up to a given depth', () => {
                                 new Action(false, true, new Node(valveBB))
                             ]))]));
 });
+
+test('can find action series for highest total pressure for a given permutation of actions', () => {
+    const valves = parseInput(testInput);
+    const valveCC = valves.get("CC");
+    const valveDD = valves.get("DD");
+
+    const result = findHighestTotalPressure(permuteActions(valves, "AA", 3));
+    expect(result).toEqual({
+        totalPressureReleased: 20,
+        actionSeries: [
+            new Action(true, false, valveDD),
+            new Action(false, true, valveDD),
+            new Action(true, false, valveCC)]
+    })
+})
 
 test('can parse puzzle input', () => {
     expect(parseInput(puzzleInput).size).toEqual(59);
